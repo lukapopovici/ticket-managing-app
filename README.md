@@ -129,6 +129,3 @@ pip install fastapi uvicorn sqlalchemy httpx motor pymongo
   - `MONGO_DB` (default: `pos_client`)
 
 ---
-
-## Authors
-- POS Project Python — 2025
