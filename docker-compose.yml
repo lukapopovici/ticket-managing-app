@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  auth:
+    build: ./src/auth_service
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:////data/auth.db
+      - CORS_ORIGINS=*
+    volumes:
+      - ./data/auth:/data
+
+  event:
+    build: ./src/event_service
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=sqlite:////data/event.db
+      - CORS_ORIGINS=*
+    volumes:
+      - ./data/event:/data
+
+  client:
+    build: ./src/client_service
+    ports:
+      - "8002:8002"
+    environment:
+      - MONGO_URL=mongodb://mongo:27017
+      - MONGO_DB=pos_client
+      - EVENT_SERVICE_URL=http://event:8001
+      - CORS_ORIGINS=*
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - auth
+      - event
+      - client
+
+volumes:
+  mongo-data:

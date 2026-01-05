@@ -1,6 +1,8 @@
+import os
 import uuid
 from typing import List, Optional
 from fastapi import FastAPI, Depends, HTTPException, status, Query
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from event_service.db import Base, engine, SessionLocal
@@ -9,6 +11,10 @@ from common.deps import get_current_user, require_role
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Event Service")
+
+origins = os.getenv("CORS_ORIGINS", "*")
+allow_origins = ["*"] if origins == "*" else [o.strip() for o in origins.split(",") if o.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=allow_origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 def get_db():
     db = SessionLocal()
@@ -187,3 +193,7 @@ def list_event_packets(
         query = query.having((models.Package.seats - func.count(models.Ticket.code)) >= available_tickets)
     # paginare
     return query.offset((page - 1) * items_per_page).limit(items_per_page).all()
+
+@app.get("/health")
+def health():
+    return {"ok": True}

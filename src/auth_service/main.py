@@ -1,4 +1,6 @@
+import os
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from auth_service.db import Base, engine, SessionLocal
 from auth_service import models, schemas, utils
@@ -7,6 +9,10 @@ from typing import List
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Auth Service")
+
+origins = os.getenv("CORS_ORIGINS", "*")
+allow_origins = ["*"] if origins == "*" else [o.strip() for o in origins.split(",") if o.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=allow_origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 def get_db():
     db = SessionLocal()
@@ -37,3 +43,7 @@ def create_user(body: schemas.UserCreate, db: Session = Depends(get_db)):
 @app.get("/users", response_model=List[schemas.UserOut])
 def list_users(db: Session = Depends(get_db)):
     return db.query(models.User).all()
+
+@app.get("/health")
+def health():
+    return {"ok": True}

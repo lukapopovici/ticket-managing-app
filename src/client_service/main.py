@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from bson import ObjectId
 import httpx
 from client_service.db import clients
@@ -10,6 +11,10 @@ from common.deps import get_current_user
 EVENT_SERVICE_URL = os.getenv("EVENT_SERVICE_URL", "http://localhost:8001")
 
 app = FastAPI(title="Client Service")
+
+origins = os.getenv("CORS_ORIGINS", "*")
+allow_origins = ["*"] if origins == "*" else [o.strip() for o in origins.split(",") if o.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=allow_origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 #HATEOAS-ul
 # Informare client despre creare/actualizare profil + unde sunt biletele
@@ -113,3 +118,7 @@ async def ticket_details(code: str, user=Depends(get_current_user)):
         elif bilet.get("tip") == "pachet" and bilet.get("pachet"):
             details["pachet"] = bilet["pachet"]
     return details
+
+@app.get("/health")
+def health():
+    return {"ok": True}
